@@ -1,0 +1,12 @@
+defaults:
+  - base
+
+condition: baseline
+env:
+  name: MiniGrid-FourRooms-v0
+  seed_pool: 500
+  test_fraction: 0.2        # seeds 0..399 train, 400..499 test
+
+aux:
+  lambda_pred: 0.0
+  lambda_cons: 0.0

@@ -1,0 +1,17 @@
+defaults:
+  - base
+
+# Condition 6: action embeddings are zeroed out in the transformer input.
+# Everything else identical to k_step_no_cons.
+condition: no_action
+env:
+  name: MiniGrid-FourRooms-v0
+  seed_pool: 500
+  test_fraction: 0.2
+
+predictor:
+  use_action_conditioning: false
+
+aux:
+  lambda_pred: 0.1
+  lambda_cons: 0.0

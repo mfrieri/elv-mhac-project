@@ -1,0 +1,15 @@
+defaults:
+  - base
+
+# Condition 5: matched-gradient control.
+# Doubles lambda_pred, zeroes lambda_cons so total aux gradient magnitude
+# matches MHAC-K but without the consistency signal.
+condition: k_step_double_pred
+env:
+  name: MiniGrid-FourRooms-v0
+  seed_pool: 500
+  test_fraction: 0.2
+
+aux:
+  lambda_pred: 0.2
+  lambda_cons: 0.0

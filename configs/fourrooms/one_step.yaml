@@ -1,0 +1,15 @@
+defaults:
+  - base
+
+condition: one_step
+env:
+  name: MiniGrid-FourRooms-v0
+  seed_pool: 500
+  test_fraction: 0.2
+
+predictor:
+  horizon: 1               # only k=1
+
+aux:
+  lambda_pred: 0.1
+  lambda_cons: 0.0

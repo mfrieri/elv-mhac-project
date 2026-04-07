@@ -1,0 +1,12 @@
+defaults:
+  - base
+
+condition: k_step_no_cons
+env:
+  name: MiniGrid-MultiRoom-N6-v0
+  seed_pool: 500
+  test_fraction: 0.2
+
+aux:
+  lambda_pred: 0.1
+  lambda_cons: 0.0
