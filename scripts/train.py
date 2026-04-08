@@ -10,8 +10,11 @@ Usage:
 import argparse
 import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Resolve the project root regardless of CWD or how __file__ is set
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 from src.env.wrappers import get_seed_split, make_vec_envs, make_env
 from src.training.ppo_trainer import MHACTrainer
