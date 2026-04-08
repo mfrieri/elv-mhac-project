@@ -225,3 +225,8 @@ checkpoints/
 *.zip
 
 claude/
+
+slurm-*.out
+slurm-*.err
+slurm_*.out
+slurm_*.err
