@@ -43,12 +43,14 @@ class MHACTrainer(PPO):
         policy_kwargs.setdefault("net_arch", [])   # no extra MLP on top of encoder
         kwargs["policy_kwargs"] = policy_kwargs
 
-        super().__init__(*args, **kwargs)
-
+        # Set these before super().__init__() because SB3 calls _setup_model()
+        # inside __init__, which references these attributes.
         self.predictor = predictor
         self.lambda_pred = lambda_pred
         self.lambda_cons = lambda_cons
         self.horizon = horizon
+
+        super().__init__(*args, **kwargs)
 
     def _setup_model(self) -> None:
         super()._setup_model()
