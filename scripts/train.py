@@ -51,6 +51,7 @@ def parse_args():
     p.add_argument("--checkpoint-dir", default="checkpoints")
     p.add_argument("--log-dir", default="logs")
     p.add_argument("--seed", type=int, default=42, help="Global random seed")
+    p.add_argument("--tensorboard", action="store_true", help="Enable TensorBoard logging")
     return p.parse_args()
 
 
@@ -113,7 +114,7 @@ def main():
         vf_coef=0.5,
         max_grad_norm=0.5,
         verbose=1,
-        tensorboard_log=args.log_dir,
+        tensorboard_log=args.log_dir if args.tensorboard else None,
         seed=args.seed,
     )
 
