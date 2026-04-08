@@ -12,6 +12,8 @@ import os
 import sys
 from pathlib import Path
 
+from stable_baselines3.common.callbacks import CheckpointCallback
+
 # Resolve the project root regardless of CWD or how __file__ is set
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -52,6 +54,12 @@ def parse_args():
     p.add_argument("--seed-pool", type=int, default=500)
     p.add_argument("--total-steps", type=int, default=TOTAL_STEPS)
     p.add_argument("--checkpoint-dir", default="checkpoints")
+    p.add_argument(
+        "--checkpoint-freq",
+        type=int,
+        default=100_000,
+        help="Save an intermediate checkpoint every N environment timesteps",
+    )
     p.add_argument("--log-dir", default="logs")
     p.add_argument("--seed", type=int, default=42, help="Global random seed")
     p.add_argument("--tensorboard", action="store_true", help="Enable TensorBoard logging")
@@ -124,10 +132,24 @@ def main():
     print(f"\nStarting run: {run_name}")
     print(f"  lambda_pred={lambda_pred}  lambda_cons={lambda_cons}  K={horizon}\n")
 
+    callbacks = []
+    if args.checkpoint_freq > 0:
+        # SB3's callback frequency is counted in env.step() calls, not raw
+        # timesteps, so divide by the number of parallel envs.
+        save_freq = max(args.checkpoint_freq // N_ENVS, 1)
+        callbacks.append(
+            CheckpointCallback(
+                save_freq=save_freq,
+                save_path=ckpt_dir,
+                name_prefix=run_name,
+            )
+        )
+
     model.learn(
         total_timesteps=args.total_steps,
         tb_log_name=run_name,
         reset_num_timesteps=True,
+        callback=callbacks or None,
     )
 
     final_path = os.path.join(ckpt_dir, "final.zip")
