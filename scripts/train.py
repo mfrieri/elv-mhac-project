@@ -11,7 +11,7 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.env.wrappers import get_seed_split, make_vec_envs, make_env
 from src.training.ppo_trainer import MHACTrainer
