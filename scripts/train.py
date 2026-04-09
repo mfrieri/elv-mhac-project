@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.env.wrappers import get_seed_split, make_vec_envs, make_env
 from src.training.ppo_trainer import MHACTrainer
+from src.utils.logging import WandBEvalCallback
 
 ENV_NAMES = {
     "fourrooms": "MiniGrid-FourRooms-v0",
@@ -63,6 +64,11 @@ def parse_args():
     p.add_argument("--log-dir", default="logs")
     p.add_argument("--seed", type=int, default=42, help="Global random seed")
     p.add_argument("--tensorboard", action="store_true", help="Enable TensorBoard logging")
+    p.add_argument("--wandb", action="store_true", help="Enable W&B logging")
+    p.add_argument("--eval-freq", type=int, default=50_000,
+                   help="Evaluate every N timesteps (W&B only)")
+    p.add_argument("--eval-episodes", type=int, default=50,
+                   help="Episodes per evaluation")
     return p.parse_args()
 
 
@@ -133,6 +139,23 @@ def main():
     print(f"  lambda_pred={lambda_pred}  lambda_cons={lambda_cons}  K={horizon}\n")
 
     callbacks = []
+
+    if args.wandb:
+        train_eval_env = make_env(env_name, train_seeds)
+        test_eval_env  = make_env(env_name, test_seeds)
+        callbacks.append(
+            WandBEvalCallback(
+                train_env=train_eval_env,
+                test_env=test_eval_env,
+                n_eval_episodes=args.eval_episodes,
+                eval_freq=args.eval_freq,
+                run_name=run_name,
+                condition=args.condition,
+                env_name=args.env,
+                verbose=1,
+            )
+        )
+
     if args.checkpoint_freq > 0:
         # SB3's callback frequency is counted in env.step() calls, not raw
         # timesteps, so divide by the number of parallel envs.
