@@ -85,17 +85,21 @@ class MHACTrainer(PPO):
         K = self.horizon
         buf = self.rollout_buffer
 
-        # obs shape: (n_steps, n_envs, *obs_shape)
-        obs_np = buf.observations          # (T, n_envs, C, H, W)
-        acts_np = buf.actions              # (T, n_envs, 1) or (T, n_envs)
-        T, n_envs = obs_np.shape[:2]
+        # SB3 may store observations already flattened to (T*n_envs, *obs_shape),
+        # so infer T and n_envs from the buffer's own attributes rather than shape[:2].
+        obs_np = buf.observations          # (T*n_envs, C, H, W) or (T, n_envs, C, H, W)
+        acts_np = buf.actions              # matches obs layout
+        T, n_envs = buf.buffer_size, buf.n_envs
 
         if T < K + 1:
             return
 
-        # Encode all observations at once: (T*n_envs, latent_dim)
-        obs_flat = obs_np.reshape(-1, *obs_np.shape[2:])
-        obs_t = torch.tensor(obs_flat, dtype=torch.float32, device=self.device)
+        # Encode all observations at once. Use the declared observation-space
+        # shape instead of the raw buffer tail so channel dimensions are not
+        # accidentally flattened away by rollout-buffer storage details.
+        obs_shape = self.observation_space.shape
+        obs_flat = obs_np.reshape(T * n_envs, *obs_shape)
+        obs_t = torch.as_tensor(obs_flat, dtype=torch.float32, device=self.device)
         with torch.no_grad():
             z_all = self.policy.features_extractor(obs_t)   # (T*n_envs, latent_dim)
         z_all = z_all.reshape(T, n_envs, -1)                # (T, n_envs, latent_dim)
