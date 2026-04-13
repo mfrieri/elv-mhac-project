@@ -54,8 +54,9 @@ class MHACTrainer(PPO):
 
     def _setup_model(self) -> None:
         super()._setup_model()
-        # Policy (and its optimizer) now exist — safe to add predictor params
-        if self.predictor is not None:
+        # Policy (and its optimizer) now exist — safe to add predictor params.
+        # Use getattr because SB3's load() bypasses __init__ and calls this directly.
+        if getattr(self, "predictor", None) is not None:
             self.predictor = self.predictor.to(self.device)
             self.policy.optimizer.add_param_group(
                 {"params": self.predictor.parameters()}
