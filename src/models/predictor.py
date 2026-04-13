@@ -122,8 +122,14 @@ class MHACPredictor(nn.Module):
         """
         Direct predictions for all horizons k = 1, ..., K simultaneously.
 
-        Implements vectorised horizon batching: folds (batch, K) into a single
-        transformer call by broadcasting over horizons.
+        Vectorised horizon batching: all K sequences share a fixed length K+2
+        so they can be stacked into a single transformer call.
+
+        Sequence layout for horizon k (fixed length K+2):
+            [z_tok | pad_{K-k} | a_1 .. a_k | PREDICT]
+        Padding is placed *before* the action tokens so [PREDICT] is always at
+        position -1. A src_key_padding_mask ensures padding positions are
+        ignored by self-attention.
 
         Args:
             z:       (batch, latent_dim)
@@ -132,24 +138,42 @@ class MHACPredictor(nn.Module):
             z_hat_direct: (batch, K, latent_dim)
         """
         batch, K = actions.shape
-        # Build sequences for all horizons — (batch*K, k+2, latent_dim)
+        seq_len = K + 2  # z_tok + K action slots + PREDICT
+
         seqs = []
+        masks = []  # True = masked (ignored by attention)
+
+        z_tok = self.latent_proj(z).unsqueeze(1)        # (batch, 1, latent_dim)
+        pred_tok = self.predict_token.expand(batch, -1, -1)  # (batch, 1, latent_dim)
+
         for k in range(1, K + 1):
-            seq = self._build_sequence(z, actions[:, :k])  # (batch, k+2, latent_dim)
-            # Pad to length K+2 so we can stack uniformly
             pad_len = K - k
-            if pad_len > 0:
-                pad = torch.zeros(
-                    batch, pad_len, self.latent_dim, device=z.device
+
+            if self.use_action_conditioning:
+                a_toks = self.action_embed(actions[:, :k])  # (batch, k, latent_dim)
+            else:
+                a_toks = torch.zeros(
+                    batch, k, self.latent_dim, device=z.device
                 )
-                seq = torch.cat([seq, pad], dim=1)
-            seqs.append(seq)
 
-        # Stack: (K, batch, K+2, latent_dim) -> (batch*K, K+2, latent_dim)
-        stacked = torch.stack(seqs, dim=0)          # (K, batch, K+2, latent_dim)
-        stacked = stacked.view(K * batch, K + 2, self.latent_dim)
+            if pad_len > 0:
+                pad = torch.zeros(batch, pad_len, self.latent_dim, device=z.device)
+                seq = torch.cat([z_tok, pad, a_toks, pred_tok], dim=1)
+                # mask: ignore the pad positions (indices 1 .. pad_len)
+                mask = torch.zeros(batch, seq_len, dtype=torch.bool, device=z.device)
+                mask[:, 1:1 + pad_len] = True
+            else:
+                seq = torch.cat([z_tok, a_toks, pred_tok], dim=1)
+                mask = torch.zeros(batch, seq_len, dtype=torch.bool, device=z.device)
 
-        out = self.transformer(stacked)             # (K*batch, K+2, latent_dim)
+            seqs.append(seq)    # each (batch, K+2, latent_dim)
+            masks.append(mask)  # each (batch, K+2)
+
+        # (K, batch, K+2, latent_dim) -> (K*batch, K+2, latent_dim)
+        stacked = torch.stack(seqs, dim=0).view(K * batch, seq_len, self.latent_dim)
+        stacked_mask = torch.stack(masks, dim=0).view(K * batch, seq_len)
+
+        out = self.transformer(stacked, src_key_padding_mask=stacked_mask)
         preds = self.output_proj(out[:, -1, :])     # (K*batch, latent_dim)
         return preds.view(K, batch, self.latent_dim).permute(1, 0, 2)
         # returns (batch, K, latent_dim)
