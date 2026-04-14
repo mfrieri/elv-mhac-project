@@ -4,6 +4,7 @@
 #SBATCH --partition=g2-standard-12
 #SBATCH --gres=gpu:1
 #SBATCH --time=06:00:00
+#SBATCH --mem=16G
 #SBATCH --requeue
 #SBATCH --output=slurm_%j.out
 #SBATCH --error=slurm_%j.err

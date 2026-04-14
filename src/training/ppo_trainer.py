@@ -130,9 +130,11 @@ class MHACTrainer(PPO):
         aux_loss = z_t.new_tensor(0.0)
 
         if self.lambda_pred > 0.0:
-            l_pred, _ = prediction_loss(z_hat_direct, z_targets)
+            l_pred, per_horizon = prediction_loss(z_hat_direct, z_targets)
             aux_loss = aux_loss + self.lambda_pred * l_pred
             self.logger.record("aux/loss_pred", l_pred.item())
+            for k, lk in enumerate(per_horizon, start=1):
+                self.logger.record(f"aux/loss_pred_k{k}", lk.item())
 
         if self.lambda_cons > 0.0:
             z_hat_chain = self.predictor.chain_with_grad(z_t, action_seq)
@@ -147,3 +149,4 @@ class MHACTrainer(PPO):
             self.max_grad_norm,
         )
         self.policy.optimizer.step()
+        self.logger.dump(step=self.num_timesteps)
