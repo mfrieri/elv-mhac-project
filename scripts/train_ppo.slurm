@@ -48,7 +48,8 @@ singularity exec --nv \
       --env '$ENV_NAME' \
       --total-steps '$TOTAL_STEPS' \
       --checkpoint-freq '$CHECKPOINT_FREQ' \
-      --tensorboard
+      --tensorboard \
+      --wandb
   "
 
 echo "Finished at $(date)"
