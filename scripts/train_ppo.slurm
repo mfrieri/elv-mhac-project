@@ -3,7 +3,7 @@
 #SBATCH --account=ds_ga_3001_003-2026sp
 #SBATCH --partition=g2-standard-12
 #SBATCH --gres=gpu:1
-#SBATCH --time=06:00:00
+#SBATCH --time=02:30:00
 #SBATCH --mem=16G
 #SBATCH --requeue
 #SBATCH --output=slurm_%j.out
