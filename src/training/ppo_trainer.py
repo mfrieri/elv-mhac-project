@@ -134,6 +134,11 @@ class MHACTrainer(PPO):
         for k, dk in enumerate(drift, start=1):
             self.logger.record(f"aux/drift_k{k}", dk.item())
 
+        # Stash latest aux values on the model so the wandb callback can read
+        # them after logger.dump() has cleared name_to_value.
+        self._latest_aux = {f"aux/drift_k{k}": dk.item()
+                            for k, dk in enumerate(drift, start=1)}
+
         aux_loss = z_t.new_tensor(0.0)
 
         if self.lambda_pred > 0.0:
@@ -142,12 +147,16 @@ class MHACTrainer(PPO):
             self.logger.record("aux/loss_pred", l_pred.item())
             for k, lk in enumerate(per_horizon, start=1):
                 self.logger.record(f"aux/loss_pred_k{k}", lk.item())
+            self._latest_aux["aux/loss_pred"] = l_pred.item()
+            self._latest_aux.update({f"aux/loss_pred_k{k}": lk.item()
+                                     for k, lk in enumerate(per_horizon, start=1)})
 
         if self.lambda_cons > 0.0:
             z_hat_chain = self.predictor.chain_with_grad(z_t, action_seq)
             l_cons, _ = consistency_loss(z_hat_chain, z_hat_direct)
             aux_loss = aux_loss + self.lambda_cons * l_cons
             self.logger.record("aux/loss_cons", l_cons.item())
+            self._latest_aux["aux/loss_cons"] = l_cons.item()
 
         self.policy.optimizer.zero_grad()
         aux_loss.backward()
