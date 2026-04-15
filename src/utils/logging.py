@@ -82,11 +82,21 @@ class WandBEvalCallback(BaseCallback):
             "eval/gen_gap":       train_metrics["success_rate"] - test_metrics["success_rate"],
         }
 
-        # Pull aux losses out of the SB3 logger if they were recorded
+        # Pull aux losses and drift curve out of the SB3 logger if they were recorded
         for key in ("aux/loss_pred", "aux/loss_cons"):
             val = self._get_logged_value(key)
             if val is not None:
                 log[key] = val
+
+        # Per-horizon prediction loss and drift (k=1..K)
+        for k in range(1, 32):
+            for prefix in ("aux/loss_pred_k", "aux/drift_k"):
+                key = f"{prefix}{k}"
+                val = self._get_logged_value(key)
+                if val is not None:
+                    log[key] = val
+                elif prefix == "aux/drift_k":
+                    break  # no more horizons
 
         wandb.log(log, step=self.num_timesteps)
 
