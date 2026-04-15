@@ -18,6 +18,7 @@ from stable_baselines3 import PPO
 
 from src.models.policy import MHACFeaturesExtractor
 from src.training.losses import prediction_loss, consistency_loss
+from src.evaluation.diagnostics import drift_curve
 
 
 class MHACTrainer(PPO):
@@ -126,6 +127,12 @@ class MHACTrainer(PPO):
 
         # Forward
         z_hat_direct = self.predictor.forward_all_horizons(z_t, action_seq)
+
+        # Drift diagnostic: cosine dist between direct and chained, per horizon k
+        z_hat_chain_eval = self.predictor.chain(z_t, action_seq)   # no grad
+        drift = drift_curve(z_hat_direct.detach(), z_hat_chain_eval)
+        for k, dk in enumerate(drift, start=1):
+            self.logger.record(f"aux/drift_k{k}", dk.item())
 
         aux_loss = z_t.new_tensor(0.0)
 
