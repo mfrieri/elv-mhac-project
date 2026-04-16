@@ -23,8 +23,9 @@ from src.training.ppo_trainer import MHACTrainer
 from src.utils.logging import WandBEvalCallback, LatentSnapshotCallback
 
 ENV_NAMES = {
-    "fourrooms": "MiniGrid-FourRooms-v0",
-    "multiroom": "MiniGrid-MultiRoom-N6-v0",
+    "fourrooms":   "MiniGrid-FourRooms-v0",
+    "multiroom":   "MiniGrid-MultiRoom-N6-v0",
+    "multiroom_n4": "MiniGrid-MultiRoom-N4-S5-v0",
 }
 
 # Hyperparameters fixed across all conditions (from base.yaml / plan)

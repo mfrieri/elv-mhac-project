@@ -75,7 +75,8 @@ class SeededEnv(gym.Wrapper):
 # ---------------------------------------------------------------------------
 
 MAX_STEPS_OVERRIDE = {
-    "MiniGrid-MultiRoom-N6-v0": 10_000,
+    "MiniGrid-MultiRoom-N4-S5-v0": 3_000,
+    "MiniGrid-MultiRoom-N6-v0":    10_000,
 }
 
 
