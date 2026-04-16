@@ -3,7 +3,7 @@
 #SBATCH --account=ds_ga_3001_003-2026sp
 #SBATCH --partition=g2-standard-12
 #SBATCH --gres=gpu:1
-#SBATCH --time=02:30:00
+#SBATCH --time=03:00:00
 #SBATCH --mem=16G
 #SBATCH --requeue
 #SBATCH --output=slurm_%j.out
@@ -18,6 +18,8 @@ CONDITION="${1:-baseline}"
 ENV_NAME="${2:-fourrooms}"
 TOTAL_STEPS="${3:-5000000}"
 CHECKPOINT_FREQ="${4:-100000}"
+SEED="${5:-42}"
+LAMBDA_CONS="${6:-}"
 
 OVERLAY_PATH="${OVERLAY_PATH:-/scratch/$USER/my_env.ext3}"
 SIF_PATH="${SIF_PATH:-/share/apps/images/cuda12.1.1-cudnn8.9.0-devel-ubuntu22.04.2.sif}"
@@ -49,6 +51,8 @@ singularity exec --nv \
       --env '$ENV_NAME' \
       --total-steps '$TOTAL_STEPS' \
       --checkpoint-freq '$CHECKPOINT_FREQ' \
+      --seed '$SEED' \
+      ${LAMBDA_CONS:+--lambda-cons '$LAMBDA_CONS'} \
       --tensorboard \
       --wandb
   "
