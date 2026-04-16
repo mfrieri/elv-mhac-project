@@ -75,6 +75,8 @@ def parse_args():
                    help="Evaluate every N timesteps (W&B only)")
     p.add_argument("--eval-episodes", type=int, default=50,
                    help="Episodes per evaluation")
+    p.add_argument("--lambda-cons", type=float, default=None,
+                   help="Override λ_cons from CONDITION_CFG (e.g. 0.05)")
     return p.parse_args()
 
 
@@ -84,7 +86,7 @@ def main():
     env_name = ENV_NAMES[args.env]
     horizon = cfg.get("horizon_override", HORIZON)
     lambda_pred = cfg["lambda_pred"]
-    lambda_cons = cfg["lambda_cons"]
+    lambda_cons = args.lambda_cons if args.lambda_cons is not None else cfg["lambda_cons"]
     use_action = not cfg.get("no_action", False)
 
     run_name = f"{args.env}_{args.condition}"
