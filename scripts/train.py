@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.env.wrappers import get_seed_split, make_vec_envs, make_env
 from src.training.ppo_trainer import MHACTrainer
-from src.utils.logging import WandBEvalCallback
+from src.utils.logging import WandBEvalCallback, LatentSnapshotCallback
 
 ENV_NAMES = {
     "fourrooms": "MiniGrid-FourRooms-v0",
@@ -60,6 +60,12 @@ def parse_args():
         type=int,
         default=100_000,
         help="Save an intermediate checkpoint every N environment timesteps",
+    )
+    p.add_argument(
+        "--latent-snapshot-dir",
+        default="latent_snapshots",
+        help="Directory for latent snapshot NPZs (one subdir per run). "
+             "Pass empty string to disable.",
     )
     p.add_argument("--log-dir", default="logs")
     p.add_argument("--seed", type=int, default=42, help="Global random seed")
@@ -167,6 +173,19 @@ def main():
                 name_prefix=run_name,
             )
         )
+
+        if args.latent_snapshot_dir:
+            snapshot_env = make_env(env_name, test_seeds)
+            callbacks.append(
+                LatentSnapshotCallback(
+                    eval_env=snapshot_env,
+                    snapshot_freq=save_freq,   # same cadence as checkpoints
+                    snapshot_dir=args.latent_snapshot_dir,
+                    run_name=run_name,
+                    n_episodes=5,
+                    verbose=1,
+                )
+            )
 
     model.learn(
         total_timesteps=args.total_steps,
