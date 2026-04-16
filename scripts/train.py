@@ -78,6 +78,8 @@ def parse_args():
                    help="Episodes per evaluation")
     p.add_argument("--lambda-cons", type=float, default=None,
                    help="Override λ_cons from CONDITION_CFG (e.g. 0.05)")
+    p.add_argument("--n-steps", type=int, default=N_STEPS,
+                   help="PPO rollout steps per env (default 128; use 512-1024 for MultiRoom)")
     return p.parse_args()
 
 
@@ -129,7 +131,7 @@ def main():
         lambda_pred=lambda_pred,
         lambda_cons=lambda_cons,
         horizon=horizon,
-        n_steps=N_STEPS,
+        n_steps=args.n_steps,
         batch_size=BATCH_SIZE,
         n_epochs=N_EPOCHS,
         learning_rate=LEARNING_RATE,
