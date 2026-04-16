@@ -89,7 +89,7 @@ def main():
     lambda_cons = args.lambda_cons if args.lambda_cons is not None else cfg["lambda_cons"]
     use_action = not cfg.get("no_action", False)
 
-    run_name = f"{args.env}_{args.condition}"
+    run_name = f"{args.env}_{args.condition}_seed{args.seed}"
     ckpt_dir = os.path.join(args.checkpoint_dir, run_name)
     os.makedirs(ckpt_dir, exist_ok=True)
     os.makedirs(args.log_dir, exist_ok=True)
