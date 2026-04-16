@@ -74,9 +74,17 @@ class SeededEnv(gym.Wrapper):
 # Factory helpers
 # ---------------------------------------------------------------------------
 
+MAX_STEPS_OVERRIDE = {
+    "MiniGrid-MultiRoom-N6-v0": 10_000,
+}
+
+
 def _make_single_env(env_name: str, seeds: list):
     def _init():
-        env = gym.make(env_name)
+        kwargs = {}
+        if env_name in MAX_STEPS_OVERRIDE:
+            kwargs["max_steps"] = MAX_STEPS_OVERRIDE[env_name]
+        env = gym.make(env_name, **kwargs)
         env = SeededEnv(env, seeds)
         env = ImageToCHW(env)
         return env
