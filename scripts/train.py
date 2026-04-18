@@ -31,7 +31,7 @@ ENV_NAMES = {
 # Hyperparameters fixed across all conditions (from base.yaml / plan)
 LATENT_DIM    = 256
 N_STEPS       = 128   # rollout length per env — must be >= K
-N_ENVS        = 4
+N_ENVS        = 16
 TOTAL_STEPS   = 5_000_000
 LEARNING_RATE = 3e-4
 BATCH_SIZE    = 256
