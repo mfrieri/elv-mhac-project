@@ -13,6 +13,8 @@ Getting either backwards defeats the purpose of the loss.
 import torch
 import torch.nn.functional as F
 
+N_OBJECT_TYPES = 11  # MiniGrid object type range: 0-10
+
 
 def prediction_loss(
     z_hat_direct: torch.Tensor,
@@ -76,3 +78,27 @@ def consistency_loss(
     per_horizon = per_step.mean(dim=0)   # (K-1,)
     loss = per_horizon.mean()
     return loss, per_horizon
+
+
+def reconstruction_loss(
+    logits: torch.Tensor,
+    obs: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Cross-entropy reconstruction loss over MiniGrid object types.
+
+    The decoder is trained to predict which object occupies each cell from the
+    latent z.  Gradients flow through the decoder and back into the encoder,
+    pushing z to preserve spatial structure beyond what PPO alone requires.
+
+    Args:
+        logits: (batch, N_OBJECT_TYPES, H, W) — GridDecoder output
+        obs:    (batch, 3, H, W) float32 in [0, 1] — normalized MiniGrid obs.
+                Channel 0 encodes object_type / 255.
+    Returns:
+        loss: scalar cross-entropy averaged over all cells and batch
+    """
+    # Recover integer object type from normalized channel 0.
+    # Values are multiples of 1/255, so rounding is exact.
+    target = (obs[:, 0, :, :] * 255.0).round().long().clamp(0, N_OBJECT_TYPES - 1)
+    return F.cross_entropy(logits, target)

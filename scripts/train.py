@@ -78,6 +78,8 @@ def parse_args():
                    help="Episodes per evaluation")
     p.add_argument("--lambda-cons", type=float, default=None,
                    help="Override λ_cons from CONDITION_CFG (e.g. 0.05)")
+    p.add_argument("--lambda-recon", type=float, default=0.0,
+                   help="Weight for grid reconstruction auxiliary loss (default 0 = disabled)")
     p.add_argument("--n-steps", type=int, default=N_STEPS,
                    help="PPO rollout steps per env (default 128; use 512-1024 for MultiRoom)")
     return p.parse_args()
@@ -91,6 +93,8 @@ def main():
     lambda_pred = cfg["lambda_pred"]
     lambda_cons = args.lambda_cons if args.lambda_cons is not None else cfg["lambda_cons"]
     use_action = not cfg.get("no_action", False)
+
+    lambda_recon = args.lambda_recon
 
     run_name = f"{args.env}_{args.condition}_seed{args.seed}"
     ckpt_dir = os.path.join(args.checkpoint_dir, run_name)
@@ -123,6 +127,12 @@ def main():
             use_action_conditioning=use_action,
         )
 
+    # --- Decoder (optional) ---
+    decoder = None
+    if lambda_recon > 0.0:
+        from src.models.decoder import GridDecoder
+        decoder = GridDecoder(latent_dim=LATENT_DIM)
+
     # --- Trainer ---
     model = MHACTrainer(
         policy="MlpPolicy",
@@ -131,6 +141,8 @@ def main():
         lambda_pred=lambda_pred,
         lambda_cons=lambda_cons,
         horizon=horizon,
+        decoder=decoder,
+        lambda_recon=lambda_recon,
         n_steps=args.n_steps,
         batch_size=BATCH_SIZE,
         n_epochs=N_EPOCHS,
@@ -147,7 +159,7 @@ def main():
     )
 
     print(f"\nStarting run: {run_name}")
-    print(f"  lambda_pred={lambda_pred}  lambda_cons={lambda_cons}  K={horizon}\n")
+    print(f"  lambda_pred={lambda_pred}  lambda_cons={lambda_cons}  K={horizon}  lambda_recon={lambda_recon}\n")
 
     callbacks = []
 
@@ -202,6 +214,12 @@ def main():
     final_path = os.path.join(ckpt_dir, "final.zip")
     model.save(final_path)
     print(f"\nSaved to {final_path}")
+
+    if decoder is not None:
+        import torch
+        decoder_path = os.path.join(ckpt_dir, "decoder.pt")
+        torch.save(decoder.state_dict(), decoder_path)
+        print(f"Saved decoder to {decoder_path}")
 
 
 if __name__ == "__main__":

@@ -225,6 +225,7 @@ checkpoints/
 *.zip
 
 claude/
+CLAUDE.md
 
 slurm-*.out
 slurm-*.err
