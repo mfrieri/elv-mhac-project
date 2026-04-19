@@ -27,6 +27,7 @@ ENV_NAMES = {
     "multiroom":    "MiniGrid-MultiRoom-N6-v0",
     "multiroom_n4": "MiniGrid-MultiRoom-N4-S5-v0",
     "multiroom_n2": "MiniGrid-MultiRoom-N2-S4-v0",
+    "doorkey":      "MiniGrid-DoorKey-8x8-v0",
 }
 
 # Hyperparameters fixed across all conditions (from base.yaml / plan)
