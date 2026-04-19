@@ -23,9 +23,10 @@ from src.training.ppo_trainer import MHACTrainer
 from src.utils.logging import WandBEvalCallback, LatentSnapshotCallback
 
 ENV_NAMES = {
-    "fourrooms":   "MiniGrid-FourRooms-v0",
-    "multiroom":   "MiniGrid-MultiRoom-N6-v0",
+    "fourrooms":    "MiniGrid-FourRooms-v0",
+    "multiroom":    "MiniGrid-MultiRoom-N6-v0",
     "multiroom_n4": "MiniGrid-MultiRoom-N4-S5-v0",
+    "multiroom_n2": "MiniGrid-MultiRoom-N2-S4-v0",
 }
 
 # Hyperparameters fixed across all conditions (from base.yaml / plan)
@@ -43,7 +44,7 @@ CONDITION_CFG = {
     "baseline":          dict(lambda_pred=0.0, lambda_cons=0.0),
     "one_step":          dict(lambda_pred=0.1, lambda_cons=0.0, horizon_override=1),
     "k_step_no_cons":    dict(lambda_pred=0.1, lambda_cons=0.0),
-    "mhac_k":            dict(lambda_pred=0.1, lambda_cons=0.1),
+    "mhac_k":            dict(lambda_pred=0.1, lambda_cons=0.05),
     "k_step_double_pred":dict(lambda_pred=0.2, lambda_cons=0.0),
     "no_action":         dict(lambda_pred=0.1, lambda_cons=0.0, no_action=True),
 }
