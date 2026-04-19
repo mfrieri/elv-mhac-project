@@ -83,50 +83,66 @@ def render_grid(ax, grid: np.ndarray, title: str = "") -> None:
 
 def collect_episode(env, model, decoder, predictor, K: int, device: torch.device):
     """
-    Roll out one episode and collect observations, latents, and decoder outputs.
+    Roll out one episode, then populate per-step predictions using the ACTUAL
+    actions taken at t, t+1, ..., t+K-1.  Using real future actions (rather
+    than zero-padding) matches the training distribution and produces
+    meaningful predicted latents.
 
-    Returns a list of dicts, one per step:
-      obs_chw        : (3, H, W) float32 — raw obs
-      z              : (latent_dim,) — encoder output
-      grid_recon     : (H, W) int   — decoder(z) argmax
-      z_hat_direct   : (K, latent_dim) or None
-      grids_pred     : (K, H, W) int or None — decoder(z_hat_direct_k) argmax
+    Returns a list of per-step dicts with:
+      obs_chw     : (3, H, W) float32
+      z           : (latent_dim,)
+      grid_recon  : (H, W) int     — decoder(z_t)
+      grids_pred  : (K, H, W) int or None — decoder(z_hat_direct_k)
     """
+    # --- Pass 1: roll out and record obs + z + action ---
     obs, _ = env.reset()
     done = False
-    steps = []
+    obs_list, z_list, act_list = [], [], []
 
     while not done:
         obs_tensor = torch.as_tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
-
         with torch.no_grad():
             z = model.policy.features_extractor(obs_tensor)  # (1, latent_dim)
-            grid_recon = decoder.decode_to_grid(z)[0].cpu().numpy()  # (H, W)
+        action = int(model.policy.predict(obs, deterministic=True)[0])
 
-            z_hat_direct = None
-            grids_pred = None
-            if predictor is not None:
-                action_tensor = torch.zeros(1, K, dtype=torch.long, device=device)
-                action = model.policy.predict(obs, deterministic=True)[0]
-                # Fill realistic actions: use the model's policy for k=1, zeros for rest
-                action_tensor[0, 0] = int(action)
-                z_hat_direct = predictor.forward_all_horizons(z, action_tensor)  # (1, K, D)
-                z_hat_direct = z_hat_direct[0]  # (K, D)
-                grids_pred = decoder.decode_to_grid(z_hat_direct).cpu().numpy()  # (K, H, W)
+        obs_list.append(obs_tensor[0].cpu().numpy())
+        z_list.append(z[0])
+        act_list.append(action)
 
-        action = model.policy.predict(obs, deterministic=True)[0]
         obs, _, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
 
-        steps.append(dict(
-            obs_chw=obs_tensor[0].cpu().numpy(),
-            z=z[0].cpu().numpy(),
-            grid_recon=grid_recon,
-            z_hat_direct=z_hat_direct.cpu().numpy() if z_hat_direct is not None else None,
-            grids_pred=grids_pred,
-        ))
+    n = len(obs_list)
+    if n == 0:
+        return []
 
-    return steps
+    # --- Pass 2: decoder pass on z_t, predictor pass on real action sequences ---
+    z_stack = torch.stack(z_list, dim=0)  # (n, latent_dim)
+    with torch.no_grad():
+        grid_recon_all = decoder.decode_to_grid(z_stack).cpu().numpy()  # (n, H, W)
+
+    grids_pred_all = [None] * n
+    if predictor is not None:
+        for t in range(n):
+            # Pad remaining slots with 0 only if we run off the end of the episode.
+            action_seq = [act_list[t + k] if t + k < n else 0 for k in range(K)]
+            action_tensor = torch.tensor(action_seq, dtype=torch.long,
+                                          device=device).unsqueeze(0)  # (1, K)
+            with torch.no_grad():
+                z_hat = predictor.forward_all_horizons(
+                    z_stack[t].unsqueeze(0), action_tensor
+                )[0]  # (K, latent_dim)
+                grids_pred_all[t] = decoder.decode_to_grid(z_hat).cpu().numpy()
+
+    return [
+        dict(
+            obs_chw=obs_list[t],
+            z=z_list[t].cpu().numpy(),
+            grid_recon=grid_recon_all[t],
+            grids_pred=grids_pred_all[t],
+        )
+        for t in range(n)
+    ]
 
 
 def make_legend() -> list:
