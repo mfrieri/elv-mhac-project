@@ -1,0 +1,15 @@
+{
+  "checkpoint": "checkpoints/fourrooms_finals/fourrooms_baseline_seed123/final.zip",
+  "condition": "baseline_seed123",
+  "env": "fourrooms",
+  "env_name": "MiniGrid-FourRooms-v0",
+  "n_episodes": 50,
+  "total_steps": 2232,
+  "latent_dim": 256,
+  "seed_pool": 500,
+  "collection_seed": 0,
+  "mean_return": 0.576240062713623,
+  "std_return": 0.368537038564682,
+  "mean_length": 44.64,
+  "success_rate": 0.78
+}

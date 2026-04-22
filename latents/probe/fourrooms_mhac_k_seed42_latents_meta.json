@@ -1,0 +1,15 @@
+{
+  "checkpoint": "checkpoints/fourrooms_finals/fourrooms_mhac_k_seed42/final.zip",
+  "condition": "mhac_k_seed42",
+  "env": "fourrooms",
+  "env_name": "MiniGrid-FourRooms-v0",
+  "n_episodes": 50,
+  "total_steps": 1773,
+  "latent_dim": 256,
+  "seed_pool": 500,
+  "collection_seed": 0,
+  "mean_return": 0.6688600182533264,
+  "std_return": 0.31467998027801514,
+  "mean_length": 35.46,
+  "success_rate": 0.88
+}

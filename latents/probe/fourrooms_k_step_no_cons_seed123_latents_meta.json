@@ -1,0 +1,15 @@
+{
+  "checkpoint": "checkpoints/fourrooms_finals/fourrooms_k_step_no_cons_seed123/final.zip",
+  "condition": "k_step_no_cons_seed123",
+  "env": "fourrooms",
+  "env_name": "MiniGrid-FourRooms-v0",
+  "n_episodes": 50,
+  "total_steps": 1978,
+  "latent_dim": 256,
+  "seed_pool": 500,
+  "collection_seed": 0,
+  "mean_return": 0.6279600262641907,
+  "std_return": 0.32584184408187866,
+  "mean_length": 39.56,
+  "success_rate": 0.84
+}
