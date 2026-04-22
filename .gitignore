@@ -218,6 +218,10 @@ outputs/
 wandb/
 data/
 checkpoints/
+
+# Generated latent dumps; keep the placeholder so the directory exists.
+latents/**
+!latents/.gitkeep
 *.pth
 *.pt
 *.ckpt
