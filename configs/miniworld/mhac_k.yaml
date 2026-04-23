@@ -1,0 +1,18 @@
+defaults:
+  - base
+
+condition: mhac_k
+env:
+  name: MiniWorld-Hallway-v0
+  seed_pool: 500
+  test_fraction: 0.2
+  num_envs: 8
+
+ppo:
+  n_steps: 128
+  learning_rate: 2.5e-4
+  total_timesteps: 3_000_000
+
+aux:
+  lambda_pred: 0.1
+  lambda_cons: 0.1

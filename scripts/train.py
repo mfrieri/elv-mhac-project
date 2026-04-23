@@ -18,17 +18,31 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.env.wrappers import get_seed_split, make_vec_envs, make_env
+from src.env.wrappers import get_seed_split
+from src.env import wrappers as minigrid_factory
+from src.env import miniworld_wrappers as miniworld_factory
 from src.training.ppo_trainer import MHACTrainer
 from src.utils.logging import WandBEvalCallback, LatentSnapshotCallback
 
 ENV_NAMES = {
-    "fourrooms":    "MiniGrid-FourRooms-v0",
-    "multiroom":    "MiniGrid-MultiRoom-N6-v0",
-    "multiroom_n4": "MiniGrid-MultiRoom-N4-S5-v0",
-    "multiroom_n2": "MiniGrid-MultiRoom-N2-S4-v0",
-    "doorkey":      "MiniGrid-DoorKey-8x8-v0",
+    "fourrooms":           "MiniGrid-FourRooms-v0",
+    "multiroom":           "MiniGrid-MultiRoom-N6-v0",
+    "multiroom_n4":        "MiniGrid-MultiRoom-N4-S5-v0",
+    "multiroom_n2":        "MiniGrid-MultiRoom-N2-S4-v0",
+    "doorkey":             "MiniGrid-DoorKey-8x8-v0",
+    "miniworld_hallway":   "MiniWorld-Hallway-v0",
+    "miniworld_oneroom":   "MiniWorld-OneRoom-v0",
+    "miniworld_fourrooms": "MiniWorld-FourRooms-v0",
 }
+
+
+def _is_miniworld(env_key: str) -> bool:
+    return env_key.startswith("miniworld_")
+
+
+def _factory_for(env_key: str):
+    """Return the env-factory module matching the selected env family."""
+    return miniworld_factory if _is_miniworld(env_key) else minigrid_factory
 
 # Hyperparameters fixed across all conditions (from base.yaml / plan)
 LATENT_DIM    = 256
@@ -110,15 +124,15 @@ def main():
     print(f"Train seeds: {len(train_seeds)}  |  Test seeds: {len(test_seeds)}")
 
     # --- Environments ---
-    vec_envs = make_vec_envs(env_name, train_seeds, num_envs=N_ENVS)
+    factory = _factory_for(args.env)
+    vec_envs = factory.make_vec_envs(env_name, train_seeds, num_envs=N_ENVS)
 
     # --- Predictor (None for baseline) ---
     predictor = None
     if lambda_pred > 0.0 or lambda_cons > 0.0:
         from src.models.predictor import MHACPredictor
-        import gymnasium as gym
-        import minigrid  # noqa: F401 — registers envs
-        sample_env = gym.make(env_name)
+        # Use a wrapped sample env so NavActions-style action restrictions are reflected.
+        sample_env = factory.make_env(env_name, train_seeds)
         num_actions = sample_env.action_space.n
         sample_env.close()
         predictor = MHACPredictor(
@@ -166,8 +180,8 @@ def main():
     callbacks = []
 
     if args.wandb:
-        train_eval_env = make_env(env_name, train_seeds)
-        test_eval_env  = make_env(env_name, test_seeds)
+        train_eval_env = factory.make_env(env_name, train_seeds)
+        test_eval_env  = factory.make_env(env_name, test_seeds)
         callbacks.append(
             WandBEvalCallback(
                 train_env=train_eval_env,
@@ -194,7 +208,7 @@ def main():
         )
 
         if args.latent_snapshot_dir:
-            snapshot_env = make_env(env_name, test_seeds)
+            snapshot_env = factory.make_env(env_name, test_seeds)
             callbacks.append(
                 LatentSnapshotCallback(
                     eval_env=snapshot_env,
