@@ -21,6 +21,7 @@ CHECKPOINT_FREQ="${4:-100000}"
 SEED="${5:-42}"
 LAMBDA_CONS="${6:-}"
 LAMBDA_RECON="${7:-}"
+K="${8:-}"
 
 OVERLAY_PATH="${OVERLAY_PATH:-/scratch/$USER/my_env.ext3}"
 SIF_PATH="${SIF_PATH:-/share/apps/images/cuda12.1.1-cudnn8.9.0-devel-ubuntu22.04.2.sif}"
@@ -33,6 +34,7 @@ echo "Condition: $CONDITION"
 echo "Environment: $ENV_NAME"
 echo "Total steps: $TOTAL_STEPS"
 echo "Checkpoint freq: $CHECKPOINT_FREQ"
+echo "K (horizon override): ${K:-<condition default>}"
 echo "Overlay: $OVERLAY_PATH"
 echo "Image: $SIF_PATH"
 echo "Conda env: $CONDA_ENV_NAME"
@@ -55,6 +57,7 @@ singularity exec --nv \
       --seed '$SEED' \
       ${LAMBDA_CONS:+--lambda-cons '$LAMBDA_CONS'} \
       ${LAMBDA_RECON:+--lambda-recon '$LAMBDA_RECON'} \
+      ${K:+--k '$K'} \
       --tensorboard \
       --wandb
   "

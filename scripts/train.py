@@ -98,6 +98,9 @@ def parse_args():
                    help="Weight for grid reconstruction auxiliary loss (default 0 = disabled)")
     p.add_argument("--n-steps", type=int, default=N_STEPS,
                    help="PPO rollout steps per env (default 128; use 512-1024 for MultiRoom)")
+    p.add_argument("--k", type=int, default=None,
+                   help="Prediction horizon K. Overrides condition default. "
+                        "Used for K ablations (e.g. 1, 3, 5, 10).")
     return p.parse_args()
 
 
@@ -105,7 +108,7 @@ def main():
     args = parse_args()
     cfg = CONDITION_CFG[args.condition]
     env_name = ENV_NAMES[args.env]
-    horizon = cfg.get("horizon_override", HORIZON)
+    horizon = args.k if args.k is not None else cfg.get("horizon_override", HORIZON)
     lambda_pred = cfg["lambda_pred"]
     lambda_cons = args.lambda_cons if args.lambda_cons is not None else cfg["lambda_cons"]
     use_action = not cfg.get("no_action", False)
@@ -113,6 +116,8 @@ def main():
     lambda_recon = args.lambda_recon
 
     run_name = f"{args.env}_{args.condition}_seed{args.seed}"
+    if args.k is not None:
+        run_name += f"_k{args.k}"
     ckpt_dir = os.path.join(args.checkpoint_dir, run_name)
     os.makedirs(ckpt_dir, exist_ok=True)
     os.makedirs(args.log_dir, exist_ok=True)
@@ -209,6 +214,7 @@ def main():
 
         if args.latent_snapshot_dir:
             snapshot_env = factory.make_env(env_name, test_seeds)
+            snapshot_horizons = sorted({h for h in (1, 3, 5, 10) if h <= horizon} | {horizon})
             callbacks.append(
                 LatentSnapshotCallback(
                     eval_env=snapshot_env,
@@ -216,6 +222,7 @@ def main():
                     snapshot_dir=args.latent_snapshot_dir,
                     run_name=run_name,
                     n_episodes=5,
+                    horizons=snapshot_horizons,
                     verbose=1,
                 )
             )
