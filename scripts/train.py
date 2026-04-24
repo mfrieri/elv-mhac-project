@@ -20,7 +20,6 @@ sys.path.insert(0, str(ROOT))
 
 from src.env.wrappers import get_seed_split
 from src.env import wrappers as minigrid_factory
-from src.env import miniworld_wrappers as miniworld_factory
 from src.training.ppo_trainer import MHACTrainer
 from src.utils.logging import WandBEvalCallback, LatentSnapshotCallback
 
@@ -42,7 +41,12 @@ def _is_miniworld(env_key: str) -> bool:
 
 def _factory_for(env_key: str):
     """Return the env-factory module matching the selected env family."""
-    return miniworld_factory if _is_miniworld(env_key) else minigrid_factory
+    if _is_miniworld(env_key):
+        # Lazy import: miniworld pulls in pyglet, which requires an X display
+        # just to register its envs — so we only import it when actually used.
+        from src.env import miniworld_wrappers as miniworld_factory
+        return miniworld_factory
+    return minigrid_factory
 
 # Hyperparameters fixed across all conditions (from base.yaml / plan)
 LATENT_DIM    = 256
