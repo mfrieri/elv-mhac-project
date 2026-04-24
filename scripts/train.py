@@ -29,6 +29,7 @@ ENV_NAMES = {
     "multiroom_n4":        "MiniGrid-MultiRoom-N4-S5-v0",
     "multiroom_n2":        "MiniGrid-MultiRoom-N2-S4-v0",
     "doorkey":             "MiniGrid-DoorKey-8x8-v0",
+    "unlock_pickup":       "MiniGrid-UnlockPickup-v0",
     "miniworld_hallway":   "MiniWorld-Hallway-v0",
     "miniworld_oneroom":   "MiniWorld-OneRoom-v0",
     "miniworld_fourrooms": "MiniWorld-FourRooms-v0",
