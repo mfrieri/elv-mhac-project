@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=mhac-miniworld
 #SBATCH --account=ds_ga_3001_003-2026sp
-#SBATCH --partition=g2-standard-12
+#SBATCH --partition=c12m85-a100-1
 #SBATCH --gres=gpu:1
 #SBATCH --time=12:00:00
 #SBATCH --mem=24G
