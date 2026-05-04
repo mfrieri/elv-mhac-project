@@ -21,6 +21,8 @@ CHECKPOINT_FREQ="${4:-100000}"
 SEED="${5:-42}"
 LAMBDA_CONS="${6:-}"
 LAMBDA_RECON="${7:-}"
+N_STEPS="${N_STEPS:-}"
+EVAL_EPISODES="${EVAL_EPISODES:-}"
 
 OVERLAY_PATH="${OVERLAY_PATH:-/scratch/$USER/my_env.ext3}"
 SIF_PATH="${SIF_PATH:-/share/apps/images/cuda12.1.1-cudnn8.9.0-devel-ubuntu22.04.2.sif}"
@@ -57,6 +59,8 @@ singularity exec --nv \
       --seed '$SEED' \
       ${LAMBDA_CONS:+--lambda-cons '$LAMBDA_CONS'} \
       ${LAMBDA_RECON:+--lambda-recon '$LAMBDA_RECON'} \
+      ${N_STEPS:+--n-steps '$N_STEPS'} \
+      ${EVAL_EPISODES:+--eval-episodes '$EVAL_EPISODES'} \
       --tensorboard \
       --wandb
   "
