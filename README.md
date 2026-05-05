@@ -127,7 +127,6 @@ elv-mhac-project/
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── pyproject.toml
-└── CLAUDE.md               Repo conventions for AI assistants
 ```
 
 ---
