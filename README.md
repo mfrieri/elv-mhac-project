@@ -356,8 +356,8 @@ If you use this code, please cite:
 
 ```bibtex
 @misc{frieri2026mhac,
-  author = {Frieri, Mikey},
-  title  = {MHAC: Multi-Horizon Auxiliary Consistency for PPO on MiniGrid},
+  author = {Michael Frieri and Chinmayee Gade},
+  title  = {Multi-Horizon Action-Conditioned Prediction with Temporal Consistency},
   year   = {2026},
   note   = {NYU DS-GA 3001 ELV course project},
   url    = {https://github.com/mfrieri/elv-mhac-project}
