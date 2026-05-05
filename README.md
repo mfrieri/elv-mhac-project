@@ -7,7 +7,7 @@ A research RL project that extends **PPO** with two auxiliary losses for represe
 
 The project currently trains on MiniGrid navigation environments and ablates which parts of the auxiliary objective actually shape the encoder's latent geometry, sample efficiency, and generalization to held-out seeds.
 
-> Course: NYU DS-GA 3001 (Empirical Learning Variations) · ELV Project · 2026 Spring
+> Course: NYU DS-GA 3001 (Embodied Learning & Vision) · ELV Project · 2026 Spring
 
 ---
 
