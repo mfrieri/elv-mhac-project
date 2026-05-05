@@ -78,7 +78,7 @@ For the presentation, this is the canonical "PPO + aux is more sample-efficient 
 
 ### Caveats
 
-- `no_action` and `k_step_double_pred` curves are not pulled here — those are after-the-fact ablations, not part of the original four-condition design, and are not needed for this finding's claim.
+- `k_step_double_pred` curves are not pulled here — those are after-the-fact ablations, not part of the original four-condition design, and are not needed for this finding's claim.
 - Threshold crossings are read off the seed-mean curve at 50K-step resolution. Per-seed crossing times have wide spread (min/max range at SR=0.5 spans several hundred thousand steps for K=5 conditions). The ranking holds for the mean.
 - "Gap maintained through 5M" rather than "baseline plateaus" — baseline is still slowly climbing through the end of training (0.51 at 3M → 0.61 at 5M), it just never catches up.
 
