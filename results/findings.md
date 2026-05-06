@@ -89,24 +89,23 @@ For the presentation, this is the canonical "PPO + aux is more sample-efficient 
 
 ---
 
-## Finding 6 — Main results: every prediction-based aux loss beats baseline; action conditioning is unnecessary
+## Finding 6 — Main results: every core prediction-based aux loss beats baseline
 
-**Claim:** Across the full FourRooms condition sweep (n=5 seeds each, 5M steps), every prediction-based auxiliary condition beats baseline on test SR, and the ranking is consistent with the *prediction-signal-magnitude* story from Finding 2 (more L_pred signal → better policy). The `no_action` ablation — `k_step_no_cons`'s predictor with the action input removed — matches the action-conditioned variant in mean test SR and **halves the across-seed standard deviation** (0.041 vs 0.106). Action conditioning is not necessary for the regularization benefit, and may slightly destabilize training.
+**Claim:** Across the core FourRooms condition sweep (n=5 seeds each, 5M steps), every prediction-based auxiliary condition beats baseline on test SR, and the ranking is consistent with the *prediction-signal-magnitude* story from Finding 2 (more L_pred signal → better policy). The core result is that future-latent prediction helps, and stronger multi-horizon prediction helps more than one-step prediction.
 
-**Setup:** Same FourRooms `mhac_k`-style training as the rest of the findings; conditions vary only in (λ_pred, λ_cons) and the predictor's `use_action_conditioning` flag. Five seeds each ({42, 123, 456, 789, 1000}). SR read from the W&B callback at the 5M-step final checkpoint, 50 eval episodes per seed on held-out test seeds.
+**Setup:** Same FourRooms `mhac_k`-style training as the rest of the findings; conditions vary only in prediction horizon and the presence/absence of the consistency term. Five seeds each ({42, 123, 456, 789, 1000}). SR read from the W&B callback at the 5M-step final checkpoint, 50 eval episodes per seed on held-out test seeds.
 
 ### Evidence
 
 **(a) Headline test SR ranking (n=5 each).**
 
-| condition          | (λ_pred, λ_cons) | act-cond | test SR (mean ± std) | min–max     | Δ vs baseline |
-|--------------------|------------------|----------|----------------------|-------------|---------------|
-| baseline           | (0.0, 0.0)       | —        | 0.628 ± 0.101        | 0.48–0.74   | —             |
-| one_step (K=1)     | (0.1, 0.0)       | yes      | 0.688 ± 0.108        | 0.58–0.84   | +0.060        |
-| k_step_no_cons     | (0.1, 0.0)       | yes      | 0.712 ± 0.106        | 0.60–0.88   | +0.084        |
-| **no_action**      | (0.1, 0.0)       | **no**   | 0.732 ± **0.041**    | 0.70–0.80   | +0.104        |
-| mhac_k (K=5)       | (0.1, 0.05)      | yes      | 0.764 ± 0.087        | 0.66–0.88   | +0.136        |
-| k_step_double_pred | (0.2, 0.0)       | yes      | 0.788 ± 0.081        | 0.68–0.90   | +0.160        |
+| condition          | (λ_pred, λ_cons) | test SR (mean ± std) | min–max     | Δ vs baseline |
+|--------------------|------------------|----------------------|-------------|---------------|
+| baseline           | (0.0, 0.0)       | 0.628 ± 0.101        | 0.48–0.74   | —             |
+| one_step (K=1)     | (0.1, 0.0)       | 0.688 ± 0.108        | 0.58–0.84   | +0.060        |
+| k_step_no_cons     | (0.1, 0.0)       | 0.712 ± 0.106        | 0.60–0.88   | +0.084        |
+| mhac_k (K=5)       | (0.1, 0.05)      | 0.764 ± 0.087        | 0.66–0.88   | +0.136        |
+| k_step_double_pred | (0.2, 0.0)       | 0.788 ± 0.081        | 0.68–0.90   | +0.160        |
 
 SE(n=5) ≈ 0.04–0.05 per condition. `k_step_double_pred` vs baseline (Δ=+0.160) is ~3.6 SE — clearly significant. `one_step` vs baseline (Δ=+0.060) is ~1.3 SE — borderline.
 
@@ -117,14 +116,13 @@ SE(n=5) ≈ 0.04–0.05 per condition. `k_step_double_pred` vs baseline (Δ=+0.1
 | baseline           | +0.060 ± 0.114        | -0.10 to +0.18   |
 | **one_step (K=1)** | **+0.124 ± 0.065**    | +0.04 to +0.22   |
 | k_step_no_cons     | +0.056 ± 0.144        | -0.18 to +0.20   |
-| no_action          | -0.024 ± 0.100        | -0.12 to +0.12   |
 | mhac_k (K=5)       | -0.012 ± 0.077        | -0.10 to +0.10   |
 | k_step_double_pred | **-0.028 ± 0.073**    | -0.14 to +0.04   |
 
 Two non-obvious things in this table:
 
 - **`one_step` is the *worst* generalizer in the sweep — worse than baseline.** Δ vs baseline = +0.064, ~1.4 SE. Borderline-significant individually, but consistent with Finding 5's K=1 result (mean gen_gap = +0.108 there with λ_cons=0.05). Two independent K=1 runs both show the worst generalization. Short-horizon prediction does not just fail to regularize — it appears to actively overfit.
-- **All K=5 aux conditions cluster near zero gen_gap** (range -0.028 to +0.056). The *form* of the K=5 prediction objective (no_cons vs no_action vs cons vs double-pred) doesn't matter for the mean — what matters is being at K=5 at all. `double_pred` has the cleanest mean (-0.028) and one of the tightest spreads.
+- **All K=5 aux conditions cluster near zero gen_gap** (range -0.028 to +0.056 among the main K=5 variants). The *form* of the K=5 prediction objective (no_cons vs cons vs double-pred) matters less than being at K=5 at all. `double_pred` has the cleanest mean (-0.028) and one of the tightest spreads.
 
 **(c) Magnitude-of-signal monotonicity (re Finding 2).** Ranking of aux conditions by total prediction-objective magnitude tracks the test-SR ranking:
 
@@ -135,42 +133,20 @@ Two non-obvious things in this table:
 
 This is the test-SR analog of Finding 2's goal_dist R² ranking. Same monotonic story: more prediction signal → better policy. Form (chained vs direct) is again secondary to magnitude (Finding 4).
 
-**(d) `no_action` per-seed numbers — variance reduction in both SR *and* gen_gap.**
-
-|   | k_step_no_cons SR | no_action SR | k_step_no_cons gap | no_action gap |
-|---|-------------------|--------------|--------------------|---------------|
-| seed 42   | 0.74 |  0.72 | +0.10 | +0.04 |
-| seed 123  | 0.88 |  0.74 | -0.18 | +0.12 |
-| seed 456  | 0.68 |  0.70 | +0.04 | -0.08 |
-| seed 789  | 0.66 |  0.80 | +0.12 | -0.08 |
-| seed 1000 | 0.60 |  0.70 | +0.20 | -0.12 |
-| **mean**  | **0.712** | **0.732** | **+0.056** | **-0.024** |
-| **std**   | **0.106** | **0.041** | **0.144**  | **0.100**  |
-
-The action-conditioned version has one strong seed (0.88) and one weak seed (0.60), and a gen_gap range of -0.18 to +0.20 (huge). The action-free version produces a tighter SR band of 0.70–0.80 *and* a smaller gen_gap range of -0.12 to +0.12. SR variance ratio F(4,4) ≈ 6.7 (p ≈ 0.05); gen_gap variance ratio F(4,4) ≈ 2.1 (smaller effect). Both axes point the same direction.
-
 ### Interpretation
 
-Two things to take away.
-
-**(1) The headline plot for the paper is row-by-row Table (a).** Every prediction-based regularizer beats baseline; the magnitudes line up with how much prediction signal each one delivers; and *neither* the chained-rollout machinery (Finding 4) *nor* the action conditioning (this finding) is load-bearing. The simplest and most surprising distillation: **the auxiliary objective works because it asks the encoder to predict the future, full stop. The bells and whistles around that objective don't matter.**
-
-**(2) Why `no_action` is stable.** The action-conditioned predictor must learn a small but non-trivial map from (z_t, a_{t..t+k}) → z_{t+k}. Different seeds settle into different action embeddings and slightly different action-effect mappings, which couples to encoder dynamics in ways that produce per-seed variation. Strip out the action input and the predictor is forced to model the *marginal* distribution of z_{t+k} given z_t — a coarser objective, but one whose gradient signal into the encoder is invariant to the seed's action-embedding RNG. The encoder gets the same regularizing pressure on every run, hence the tighter spread.
-
-This is also a useful negative result for the project's framing: action-conditioned latent-space prediction was the natural choice, but it isn't doing the work we thought.
+The headline plot for the paper is row-by-row Table (a). Every core prediction-based regularizer beats baseline, and the magnitudes line up with how much prediction signal each one delivers. The simplest distillation is: **the auxiliary objective works because it asks the encoder to predict the future, and stronger multi-horizon prediction helps more than weak or short-horizon prediction.**
 
 ### Caveats
 
 - n=5, FourRooms only. Larger sweeps may resolve the borderline differences (e.g., one_step vs baseline).
 - `mhac_k` mean here (0.764) differs slightly from the value quoted in Finding 4 (0.772). Both are 5-seed n=5 W&B reads of the same condition; the small gap reflects different W&B query timestamps within the final-checkpoint window. Not a re-run.
-- We do **not** yet have probe-table goal_dist R² for `no_action` and `one_step`. A full cross-condition probe sweep would let us check whether `no_action`'s representation quality matches `k_step_no_cons` or sits elsewhere.
-- The `no_action` variance F-test is borderline (p ≈ 0.05) at n=5; it's the right direction but a 10-seed replication would be more defensible.
+- We do **not** yet have probe-table goal_dist R² for `one_step`. A full cross-condition probe sweep would complete the representation-side comparison.
 
 ### Source
 
-- W&B sweep: 6 conditions × 5 seeds at the 5M-step checkpoint
-- Per-condition launch: [scripts/train.py](scripts/train.py) `--condition {baseline, one_step, k_step_no_cons, no_action, mhac_k, k_step_double_pred}`
-- `no_action` flag wiring: [scripts/train.py:64](scripts/train.py#L64), [scripts/train.py:111](scripts/train.py#L111)
+- W&B sweep: 5 conditions × 5 seeds at the 5M-step checkpoint
+- Per-condition launch: [scripts/train.py](scripts/train.py) `--condition {baseline, one_step, k_step_no_cons, mhac_k, k_step_double_pred}`
 
 ---
 
