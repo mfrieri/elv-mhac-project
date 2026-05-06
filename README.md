@@ -1,4 +1,4 @@
-# MHAC — Multi-Horizon Auxiliary Consistency
+# MHAC — Multi-Horizon Action Consistency with Temporal Consistency
 
 A research RL project that extends **PPO** with two auxiliary losses for representation learning on partially observable navigation tasks:
 
