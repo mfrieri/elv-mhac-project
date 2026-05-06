@@ -13,7 +13,7 @@ The project currently trains on MiniGrid navigation environments and ablates whi
 
 ## Table of contents
 
-- [MHAC — Multi-Horizon Auxiliary Consistency](#mhac--multi-horizon-auxiliary-consistency)
+- [MHAC — Multi-Horizon Action Consistency with Temporal Consistency](#mhac--multi-horizon-action-consistency-with-temporal-consistency)
   - [Table of contents](#table-of-contents)
   - [Motivation](#motivation)
   - [Method](#method)
@@ -108,7 +108,7 @@ elv-mhac-project/
 │   └── miniworld/
 ├── scripts/                Entry points
 │   ├── train.py            Main training entry point
-│   ├── evaluate.py
+│   ├── evaluate.py        Placeholder / TODO
 │   ├── save_latents.py     Snapshot latents from a checkpoint
 │   ├── analyze_latents.py  Linear probes + effective rank
 │   ├── inspect_latents.py
@@ -204,7 +204,6 @@ Six conditions are wired into [scripts/train.py](scripts/train.py#L63). Each iso
 | `k_step_no_cons` | 0.1 | 0.0 | 5 | yes | K-step direct prediction only — no chained rollout. |
 | **`mhac_k`** | **0.1** | **0.05** | **5** | **yes** | **Full method: direct prediction + chained consistency.** |
 | `k_step_double_pred` | 0.2 | 0.0 | 5 | yes | Doubles L_pred weight — confounder check for L_cons. |
-| `no_action` | 0.1 | 0.0 | 5 | **no** | Predictor with action input removed. |
 
 ---
 
@@ -262,7 +261,7 @@ W&B and TensorBoard are both enabled by default in the SLURM wrapper. See [scrip
 python scripts/save_latents.py --checkpoint checkpoints/<run>/final.zip
 ```
 
-This rolls the trained policy on held-out **test seeds** and writes per-step `(z, action, reward, info)` snapshots under `latents/<run>/`.
+This rolls the trained policy on held-out **test seeds** and writes a single `.npz` plus companion `_meta.json` into the chosen output directory (by default `latents/`).
 
 ### Inspect / probe latents
 
@@ -332,13 +331,13 @@ Final, presentation-ready results live in [results/findings.md](results/findings
 | 3 | The decoder is a *diagnostic*, not a product — predicted latents decode to neutral grids despite high cosine similarity. |
 | 4 | The chained rollout in L_cons provides **no measurable benefit** over scaling L_pred. |
 | 5 | K=5 is the sweet spot; longer horizons regularize but with diminishing returns. |
-| 6 | Every prediction-based aux loss beats baseline; **action conditioning is unnecessary** and slightly destabilizing. |
+| 6 | Every core prediction-based aux loss beats baseline. |
 | 7 | K=5 prediction losses produce a ~40% sample-efficiency speedup; K=1 does not. |
 | 8 | L_cons converges to ~0 but does not improve final long-horizon prediction quality. |
 
 The simplest distillation:
 
-> **Multi-horizon latent prediction is what does the work.** The chained-consistency rollout, the action conditioning, and the decoder all turned out to not be load-bearing on FourRooms.
+> **Multi-horizon latent prediction is what does the work.** The chained-consistency rollout and the decoder turned out to not be load-bearing on FourRooms.
 
 ---
 
