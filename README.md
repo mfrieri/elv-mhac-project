@@ -13,7 +13,7 @@ The project currently trains on MiniGrid navigation environments and ablates whi
 
 ## Table of contents
 
-- [MHAC — Multi-Horizon Action Consistency with Temporal Consistency](#mhac--multi-horizon-action-consistency-with-temporal-consistency)
+- [MHAC — Multi-Horizon Action Conditioning with Temporal Consistency](#mhac--multi-horizon-action-conditioning-with-temporal-consistency)
   - [Table of contents](#table-of-contents)
   - [Motivation](#motivation)
   - [Method](#method)
